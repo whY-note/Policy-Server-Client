@@ -82,8 +82,10 @@ class WebClient(BaseClient):
         self.ws.close()
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "json"
-    client = WebClient("ws://127.0.0.1:8000", packaging_type=PACKAGING_TYPE)
+    PACKAGING_TYPE = "pickle"
+    server_url = "ws://127.0.0.1:8000"
+    # server_url = "ws://192.168.6.49:8000"
+    client = WebClient(server_url, packaging_type=PACKAGING_TYPE)
     try:
         while True:
             client.step()

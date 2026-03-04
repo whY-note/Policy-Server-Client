@@ -36,23 +36,15 @@
 ## 以下数据仿照实际情况传输
 
 ### 有VPN
-本地测试
-|   |TCP|Web|
-|---|---|---|
-|jpeg ->原始帧 ->list ->json| 
-|jpeg ->json | 0.0105 s | 0.0306 s | 
-|jpeg ->原始帧 ->msgpack| 0.0374 s | 0.1796 s |
-|jpeg ->原始帧 ->pickle | 0.0317 s | 0.1763 s |
-
-
 与服务器测试
 
 |   |TCP|Web|
 |---|---|---|
 |jpeg ->原始帧 ->list ->json| 
-|jpeg ->json | 0.0250 s | | 
-|jpeg ->原始帧 ->msgpack| 0.1072 s |
-|jpeg ->原始帧 ->pickle | 0.1143 s |
+|jpeg ->json | 0.0250 s | 0.0322 s | 
+|jpeg ->原始帧 ->msgpack| 0.1072 s | 0.1118 s |
+
+|jpeg ->原始帧 ->pickle | 0.1143 s | 0.1314 s | 
 
 ### 无VPN
 与服务器测试
@@ -60,9 +52,9 @@
 |   |TCP|Web|
 |---|---|---|
 |jpeg ->原始帧 ->list ->json| (太大，没必要测)|
-|jpeg ->json | 0.0249 s | | 
-|jpeg ->原始帧 ->msgpack|  0.0812 s |
-|jpeg ->原始帧 ->pickle | 0.0884 s |
+|jpeg ->json | 0.0249 s | 0.0383 s | 
+|jpeg ->原始帧 ->msgpack|  0.0812 s | 0.1051 s |
+|jpeg ->原始帧 ->pickle | 0.0884 s | 0.1090 s | 
 
 ### 消息总size 比较
 

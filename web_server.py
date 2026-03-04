@@ -104,7 +104,7 @@ class WebServer(BaseServer):
 
 if __name__ == "__main__":
     from utils import jpeg_to_img
-    PACKAGING_TYPE = "json"
+    PACKAGING_TYPE = "pickle"
     async def main():
         server = WebServer(port=8000, packaging_type=PACKAGING_TYPE)
 
@@ -151,33 +151,47 @@ if __name__ == "__main__":
                             }
                         }
                     elif PACKAGING_TYPE == "msgpack" or PACKAGING_TYPE == "pickle":
-                        decode_start_time = time.monotonic()
+                        # decode_start_time = time.monotonic()
 
-                        # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
+                        # # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
                         
-                        img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
-                        img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
-                        img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
+                        # img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
+                        # img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
+                        # img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
 
-                        # print(f"size of img: {img_head_camera.nbytes} bytes")
+                        # # print(f"size of img: {img_head_camera.nbytes} bytes")
                 
-                        decode_end_time = time.monotonic()
-                        decode_time += (decode_end_time - decode_start_time)
+                        # decode_end_time = time.monotonic()
+                        # decode_time += (decode_end_time - decode_start_time)
+
+                        # obs = {
+                        #         "joint_action": {
+                        #             "left_arm": left_arm_dataset[idx],
+                        #             "left_gripper": left_gripper_dataset[idx],
+                        #             "right_arm": right_arm_dataset[idx],
+                        #             "right_gripper": right_gripper_dataset[idx],
+                        #         },
+                        #         "observation": {
+                        #             # 已经是单张图片了，不用再取索引
+                        #             "head_camera": img_head_camera,
+                        #             "left_camera": img_left_camera,
+                        #             "right_camera": img_right_camera,
+                        #         } 
+                        #     }
 
                         obs = {
-                                "joint_action": {
-                                    "left_arm": left_arm_dataset[idx],
-                                    "left_gripper": left_gripper_dataset[idx],
-                                    "right_arm": right_arm_dataset[idx],
-                                    "right_gripper": right_gripper_dataset[idx],
-                                },
-                                "observation": {
-                                    # 已经是单张图片了，不用再取索引
-                                    "head_camera": img_head_camera,
-                                    "left_camera": img_left_camera,
-                                    "right_camera": img_right_camera,
-                                } 
+                            "joint_action": {
+                                "left_arm": left_arm_dataset[idx],
+                                "left_gripper": left_gripper_dataset[idx],
+                                "right_arm": right_arm_dataset[idx],
+                                "right_gripper": right_gripper_dataset[idx],
+                            },
+                            "observation": {
+                                "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
+                                "left_camera": bytes(rgb_dataset_left_camera[idx]), 
+                                "right_camera": bytes(rgb_dataset_right_camera[idx]),
                             }
+                        }
 
                     await server.post_obs(obs)
 
