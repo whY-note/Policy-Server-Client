@@ -92,9 +92,7 @@ class WebServer(BaseServer):
         except Exception as e:
             print("Send failed:", e)
 
-    # -------------------------------------------------
-    # 获取 action
-    # -------------------------------------------------
+
     async def get_action(self, timeout=None) -> np.ndarray:
         try:
             action = await asyncio.wait_for(self._action_queue.get(), timeout=timeout)
@@ -105,7 +103,8 @@ class WebServer(BaseServer):
 
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "pickle"
+    from utils import jpeg_to_img
+    PACKAGING_TYPE = "json"
     async def main():
         server = WebServer(port=8000, packaging_type=PACKAGING_TYPE)
 
@@ -121,30 +120,64 @@ if __name__ == "__main__":
             import h5py
             import cv2
             with h5py.File("./data/episode0.hdf5", "r") as f:
-                rgb_dataset = f["observation/head_camera/rgb"] # bytes
-                
-                test_num = min(100, len(rgb_dataset))
+                # load data from hdf5 file
+                rgb_dataset_head_camera = f["observation/head_camera/rgb"]
+                rgb_dataset_left_camera = f["observation/left_camera/rgb"] 
+                rgb_dataset_right_camera = f["observation/right_camera/rgb"]
+
+                left_arm_dataset = f["joint_action/left_arm"][:]
+                left_gripper_dataset = f["joint_action/left_gripper"][:]
+                right_arm_dataset = f["joint_action/right_arm"][:]
+                right_gripper_dataset = f["joint_action/right_gripper"][:]
+
+                test_num = min(100, len(rgb_dataset_head_camera))
+                print("test_num: ", test_num)
                 decode_time = 0
                 start_time = time.monotonic()
+
                 for idx in range(test_num):
-                    decode_start_time = time.monotonic()
-
-                    img_array = np.frombuffer(rgb_dataset[idx], dtype=np.uint8)
-                    img = cv2.imdecode(img_array, cv2.IMREAD_COLOR) # np.ndarray
-                    
-                    decode_end_time = time.monotonic()
-                    decode_time += (decode_end_time - decode_start_time)
-
                     if PACKAGING_TYPE == "json":
                         obs = {
-                            "idx": f"obs {idx}",
-                            "state": img.tolist() # json
+                            "joint_action": {
+                                "left_arm": left_arm_dataset[idx],
+                                "left_gripper": left_gripper_dataset[idx],
+                                "right_arm": right_arm_dataset[idx],
+                                "right_gripper": right_gripper_dataset[idx],
+                            },
+                            "observation": {
+                                "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
+                                "left_camera": bytes(rgb_dataset_left_camera[idx]), 
+                                "right_camera": bytes(rgb_dataset_right_camera[idx]),
+                            }
                         }
                     elif PACKAGING_TYPE == "msgpack" or PACKAGING_TYPE == "pickle":
+                        decode_start_time = time.monotonic()
+
+                        # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
+                        
+                        img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
+                        img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
+                        img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
+
+                        # print(f"size of img: {img_head_camera.nbytes} bytes")
+                
+                        decode_end_time = time.monotonic()
+                        decode_time += (decode_end_time - decode_start_time)
+
                         obs = {
-                            "idx": f"obs {idx}",
-                            "state": img # msgpack, pcikle
-                        }
+                                "joint_action": {
+                                    "left_arm": left_arm_dataset[idx],
+                                    "left_gripper": left_gripper_dataset[idx],
+                                    "right_arm": right_arm_dataset[idx],
+                                    "right_gripper": right_gripper_dataset[idx],
+                                },
+                                "observation": {
+                                    # 已经是单张图片了，不用再取索引
+                                    "head_camera": img_head_camera,
+                                    "left_camera": img_left_camera,
+                                    "right_camera": img_right_camera,
+                                } 
+                            }
 
                     await server.post_obs(obs)
 

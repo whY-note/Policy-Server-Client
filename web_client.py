@@ -41,7 +41,7 @@ class WebClient(BaseClient):
         return obs
 
     def post_action(self, action):
-        print(f"post_action: {action}")
+        # print(f"post_action: {action}")
 
         if self.packaging_type == "json":
             if isinstance(action, np.ndarray):
@@ -68,7 +68,7 @@ class WebClient(BaseClient):
             self.ws.send(packed_payload) 
 
     def infer(self, obs) -> np.ndarray:
-        return np.zeros(7, dtype=np.float32)
+        return np.zeros(14, dtype=np.float64)
 
     def step(self):
         obs = self.get_obs()
@@ -82,7 +82,7 @@ class WebClient(BaseClient):
         self.ws.close()
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "pickle"
+    PACKAGING_TYPE = "json"
     client = WebClient("ws://127.0.0.1:8000", packaging_type=PACKAGING_TYPE)
     try:
         while True:

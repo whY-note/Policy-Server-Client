@@ -106,7 +106,7 @@ if __name__== "__main__":
 
             for idx in range(test_num):
                 
-                print("jpeg size:", len(rgb_dataset_head_camera[idx]))
+                # print("jpeg size:", len(rgb_dataset_head_camera[idx]))
                 if PACKAGING_TYPE == "json":
                     obs = {
                             "joint_action": {
@@ -125,13 +125,13 @@ if __name__== "__main__":
                 elif PACKAGING_TYPE == "msgpack" or PACKAGING_TYPE == "pickle":
                     decode_start_time = time.monotonic()
 
-                    print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
+                    # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
                     
                     img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
                     img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
                     img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
 
-                    print(f"size of img: {img_head_camera.nbytes} bytes")
+                    # print(f"size of img: {img_head_camera.nbytes} bytes")
             
                     decode_end_time = time.monotonic()
                     decode_time += (decode_end_time - decode_start_time)

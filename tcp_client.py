@@ -65,7 +65,7 @@ class TCPClient(BaseClient):
 
     def infer(self, obs):
         # TODO: use policy to infer action according to obs
-        action = np.zeros(14) # dummy action, (6-DoF + 1 gripper)*2
+        action = np.zeros(14, dtype=np.float64) # dummy action, (6-DoF + 1 gripper)*2
         return action
 
     def step(self):
@@ -78,12 +78,15 @@ class TCPClient(BaseClient):
         self.client_socket.close()
 
 if __name__ =="__main__":
-    PACKAGING_TYPE = "json"
+    PACKAGING_TYPE = "pickle"
 
     client = TCPClient(packaging_type = PACKAGING_TYPE)
 
-    host = "localhost"
-    port = 12000
+    # host = "localhost"
+    # port = 12000
+
+    host = "192.168.6.49"
+    port = 9000
 
     try:
         client.connect(host, port)
