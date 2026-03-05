@@ -11,16 +11,17 @@ import src.utils.msgpack_numpy as msgpack_numpy
 import pickle
 
 class WebClient(BaseClient):
-    def __init__(self, server_url: str,  packaging_type="json"):
+    def __init__(self, packaging_type="json"):
         super().__init__()
-        self.server_url = server_url.rstrip('/')
-        print(self.server_url)
-        self.ws = websockets.sync.client.connect(self.server_url, max_size=None)
-
         self.packaging_type = packaging_type
         self.collector = Collector()
 
         self.packer = msgpack_numpy.Packer()
+    
+    def connect(self, host, port, max_size = None):
+        self.server_url = "ws://" + host + ":" + str(port)
+        print(f"url:{self.server_url}")
+        self.ws = websockets.sync.client.connect(self.server_url, max_size = max_size)
 
     def get_obs(self):
 
@@ -90,20 +91,3 @@ class WebClient(BaseClient):
         file_path = os.path.join(file_dir, file_name)
 
         self.collector.save_hdf5(file_path)
-
-if __name__ == "__main__":
-    PACKAGING_TYPE = "pickle"
-    server_url = "ws://127.0.0.1:8000"
-    # server_url = "ws://192.168.6.49:8000"
-    # server_url = "ws://120.48.23.252:22"
-    # server_url = "ws://localhost:9000"
-    client = WebClient(server_url, packaging_type=PACKAGING_TYPE)
-    try:
-        while True:
-            client.step()
-    except KeyboardInterrupt:
-        client.close()
-    except Exception as e:
-        print(f"[ERROR] {e}")
-    finally:
-        client.close()

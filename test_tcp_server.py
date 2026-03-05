@@ -2,23 +2,14 @@ from src.tcp.tcp_server import TCPServer
 import time
 from src.utils.utils import jpeg_to_img
 import os
+import h5py
+import cv2
 
-if __name__== "__main__":
-
-    PACKAGING_TYPE = "pickle"
-
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    file_dir = os.path.join(BASE_DIR, "data")
-    file_name = "episode0.hdf5"
-    file_path = os.path.join(file_dir, file_name)
-    print(f"file path: {file_path}")
-    
-    server = TCPServer(host = "0.0.0.0", port = 8000, packaging_type=PACKAGING_TYPE)
+def main(host, port):
+    server = TCPServer(host, port, packaging_type=PACKAGING_TYPE)
     server.accept_connection()
 
     try:
-        import h5py
-        import cv2
         with h5py.File(file_path, "r") as f:
             # load data from hdf5 file
             rgb_dataset_head_camera = f["observation/head_camera/rgb"]
@@ -109,3 +100,16 @@ if __name__== "__main__":
         print("Shutting down server...")
     finally:
         server.close()
+
+
+if __name__== "__main__":
+
+    PACKAGING_TYPE = "pickle"
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    file_dir = os.path.join(BASE_DIR, "data")
+    file_name = "episode0.hdf5"
+    file_path = os.path.join(file_dir, file_name)
+    print(f"file path: {file_path}")
+    
+    main(host="0.0.0.0", port=9000)
