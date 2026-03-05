@@ -51,11 +51,11 @@
 |   |TCP|Web|
 |---|---|---|
 |jpeg ->原始帧 ->list ->json| 
-|jpeg ->json     | 0.0872 s  | 0.0881 s |
+|jpeg ->json     | 0.0872 s 无 | 0.0881 s 无|
 |jpeg ->原始帧 ->msgpack| 0.2777 s | 0.1924 s|
-|jpeg ->msgpack| 0.0793 s | 0.0855 s |
+|jpeg ->msgpack| 0.0793 s 无| 0.0855 s 无| 
 |jpeg ->原始帧 ->pickle | 0.2720 s | 0.1942 s |
-|jpeg ->pickle  | 0.0772 s |0.0807 s|
+|jpeg ->pickle  | 0.0772 s 无 |0.0807 s 无| 
 
 ### 无VPN
 与服务器测试，局域网
@@ -73,11 +73,11 @@
 |   |TCP|Web|
 |---|---|---|
 |jpeg ->原始帧 ->list ->json| 
-|jpeg ->json | 0.0933 s | 0.0882 s |
+|jpeg ->json | 0.0933 s 无 | 0.0882 s 无| 
 |jpeg ->原始帧 ->msgpack|  0.2931 s | 0.1984 s |
-|jpeg ->msgpack| 0.0734 s | 0.0820 s |
+|jpeg ->msgpack| 0.0734 s 无 | 0.0820 s 无| 
 |jpeg ->原始帧 ->pickle | 0.3013 s | 0.1976 s |
-|jpeg ->pickle| 0.0768 s | 0.0840 s |
+|jpeg ->pickle| 0.0768 s 无 | 0.0840 s  无| 
 
 ### 消息总size 比较
 

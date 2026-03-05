@@ -1,10 +1,12 @@
 from src.base.base_client import BaseClient
 import websockets.sync.client
 import numpy as np
+import os
 import json
 import struct
-from src.utils.utils import numpy_to_json, json_to_numpy
+from src.utils.collecter import Collector
 
+from src.utils.json_numpy import numpy_to_json, json_to_numpy
 import src.utils.msgpack_numpy as msgpack_numpy
 import pickle
 
@@ -16,6 +18,7 @@ class WebClient(BaseClient):
         self.ws = websockets.sync.client.connect(self.server_url, max_size=None)
 
         self.packaging_type = packaging_type
+        self.collector = Collector()
 
         self.packer = msgpack_numpy.Packer()
 
@@ -72,7 +75,7 @@ class WebClient(BaseClient):
 
     def step(self):
         obs = self.get_obs()
-
+        self.collector.collect(obs)
         # print(f"Received obs: {obs}")
         action = self.infer(obs)
         
@@ -80,6 +83,13 @@ class WebClient(BaseClient):
 
     def close(self):
         self.ws.close()
+
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        file_dir = os.path.join(BASE_DIR, "../../data")
+        file_name = "episode0_web_client_"+ self.packaging_type +".hdf5"
+        file_path = os.path.join(file_dir, file_name)
+
+        self.collector.save_hdf5(file_path)
 
 if __name__ == "__main__":
     PACKAGING_TYPE = "pickle"

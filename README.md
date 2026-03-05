@@ -55,5 +55,12 @@ ssh -p 6361 -L 9000:localhost:9000 root@120.48.23.252
 >
 > 注意： 将服务器的公网IP换成`localhost`
 >
-> 对于`web_client.py`: 
-> `server_url` 不是用`"ws://120.48.23.252:9000"` 而是`"ws://localhost:9000"`
+> 对于`web_client.py`: `server_url` 不是用`"ws://120.48.23.252:9000"`，而是`"ws://localhost:9000"`
+>
+> 对于`tcp_client.py`: `host`不是用`120.48.23.252`，而是`localhost`
+
+## TODO
+
+- [ ] 在src中添加 api
+- [ ] 在scripts里添加测试代码：从config/yaml中读取配置，然后调用api
+- [ ] shell文件，实现一键测试，类似于操作系统比赛的测例一样

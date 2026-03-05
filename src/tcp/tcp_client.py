@@ -1,10 +1,12 @@
 from src.base.base_client import BaseClient
 import numpy as np
+import os
 import socket
 import json
 import struct
-from src.utils.utils import numpy_to_json, json_to_numpy
+from src.utils.collecter import Collector
 
+from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
 
@@ -12,6 +14,7 @@ class TCPClient(BaseClient):
     def __init__(self, packaging_type):
         super().__init__()
         self.packaging_type = packaging_type
+        self.collector = Collector()
 
     def connect(self, host, port):
         self.host = host
@@ -70,12 +73,19 @@ class TCPClient(BaseClient):
 
     def step(self):
         obs = self.get_obs()
-        # print(f"Received obs: {obs}")
+        self.collector.collect(obs)
         action = self.infer(obs)
         self.post_action(action)
         
     def close(self):
         self.client_socket.close()
+
+        BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+        file_dir = os.path.join(BASE_DIR, "../../data")
+        file_name = "episode0_tcp_client_"+ self.packaging_type +".hdf5"
+        file_path = os.path.join(file_dir, file_name)
+
+        self.collector.save_hdf5(file_path)
 
 if __name__ =="__main__":
     PACKAGING_TYPE = "pickle"

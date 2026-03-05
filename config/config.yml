@@ -1,0 +1,10 @@
+protocol: tcp # tcp, web
+packaging_type: json # json, msgpack, pickle
+
+server:
+  host: 0.0.0.0
+  port: 8000
+
+client:
+  host: localhost
+  port: 8000

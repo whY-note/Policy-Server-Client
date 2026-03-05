@@ -16,7 +16,8 @@ if __name__ == "__main__":
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
     file_dir = os.path.join(BASE_DIR, "../data")
-    file_name = "episode0.hdf5"
+    # file_name = "episode0.hdf5"
+    file_name = "episode0_tcp_client.hdf5"
     file_path = os.path.join(file_dir, file_name)
     
     print(f"file path: {file_path}")
