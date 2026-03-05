@@ -18,6 +18,7 @@ class TCPClient(BaseClient):
         self.port = port
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("before connect")
         self.client_socket.connect((self.host, self.port))
 
         print(f"Connected to TCP Server at {self.host}:{self.port}")
@@ -85,7 +86,13 @@ if __name__ =="__main__":
     # host = "localhost"
     # port = 12000
 
-    host = "192.168.6.49"
+    # host = "192.168.6.49"
+    # port = 8000
+
+    # host = "120.48.23.252"
+    # port  = 9000
+
+    host = "localhost"
     port = 9000
 
     try:
