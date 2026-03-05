@@ -1,11 +1,11 @@
-from base_client import BaseClient
+from src.base.base_client import BaseClient
 import numpy as np
 import socket
 import json
 import struct
-from utils import numpy_to_json, json_to_numpy
+from src.utils.utils import numpy_to_json, json_to_numpy
 
-import msgpack_numpy
+from src.utils import msgpack_numpy
 import pickle
 
 class TCPClient(BaseClient):
@@ -18,7 +18,6 @@ class TCPClient(BaseClient):
         self.port = port
 
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        print("before connect")
         self.client_socket.connect((self.host, self.port))
 
         print(f"Connected to TCP Server at {self.host}:{self.port}")
@@ -83,8 +82,8 @@ if __name__ =="__main__":
 
     client = TCPClient(packaging_type = PACKAGING_TYPE)
 
-    # host = "localhost"
-    # port = 12000
+    host = "localhost"
+    port = 8000
 
     # host = "192.168.6.49"
     # port = 8000
@@ -92,8 +91,8 @@ if __name__ =="__main__":
     # host = "120.48.23.252"
     # port  = 9000
 
-    host = "localhost"
-    port = 9000
+    # host = "localhost"
+    # port = 9000
 
     try:
         client.connect(host, port)

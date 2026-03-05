@@ -1,13 +1,13 @@
-from base_server import BaseServer
+from src.base.base_server import BaseServer
 from websockets.server import serve
 import numpy as np
 import json
 import asyncio
-from utils import numpy_to_json, json_to_numpy
+from src.utils.utils import numpy_to_json, json_to_numpy
 import time
 
 import sys
-import msgpack_numpy
+import src.utils.msgpack_numpy as msgpack_numpy
 import pickle
 
 class WebServer(BaseServer):
@@ -103,9 +103,18 @@ class WebServer(BaseServer):
 
 
 if __name__ == "__main__":
-    from utils import jpeg_to_img
+    from src.utils.utils import jpeg_to_img
+    import os
     PACKAGING_TYPE = "pickle"
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    file_dir = os.path.join(BASE_DIR, "../data")
+    file_name = "episode0.hdf5"
+    file_path = os.path.join(file_dir, file_name)
+    print(f"file path: {file_path}")
     async def main():
+
         server = WebServer(port=8000, packaging_type=PACKAGING_TYPE)
 
         # 启动 WebSocket 服务器
@@ -119,7 +128,7 @@ if __name__ == "__main__":
         try:
             import h5py
             import cv2
-            with h5py.File("./data/episode0.hdf5", "r") as f:
+            with h5py.File(file_path, "r") as f:
                 # load data from hdf5 file
                 rgb_dataset_head_camera = f["observation/head_camera/rgb"]
                 rgb_dataset_left_camera = f["observation/left_camera/rgb"] 

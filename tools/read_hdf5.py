@@ -1,8 +1,16 @@
 import h5py
 import numpy as np
+import os
 import cv2
 
-with h5py.File("episode0.hdf5", "r") as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+file_dir = os.path.join(BASE_DIR, "../data")
+file_name = "episode0.hdf5"
+file_path = os.path.join(file_dir, file_name)
+print(f"file path: {file_path}")
+
+with h5py.File(file_path, "r") as f:
 
     left_arm = f["joint_action/left_arm"][:]          # (678,6)
     print(left_arm.shape)
