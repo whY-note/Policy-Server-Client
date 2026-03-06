@@ -12,7 +12,17 @@ sequenceDiagram
 ```
 
 
+## How to use?
 
+For **server**:
+
+1. 在`./config/config.yml`中的`client`下的`host`写入服务器的IP地址(若使用了隧道，则写`localhost`即可)；然后指定本次测试的**协议 (`protocol`)**, **序列化方法(`packaging_type`)**
+2. 运行测试: `python test_server.py`
+
+For **client**:
+
+1. 如果是在两台不同的机器上测试，则根据server所做的修改进行修改；如果是在同一台机器上测试，则不需再改（因为Python脚本会与server读取同一个config文件）
+2. 等待server启动运行后，运行测试: `python test_client.py`
 
 
 ## 注意事项
