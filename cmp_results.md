@@ -38,10 +38,10 @@
 ### 有VPN
 与服务器测试，局域网
 
-|   |TCP|Web|
+|   |TCP|Web|UDP|
 |---|---|---|
 |jpeg ->原始帧 ->list ->json| 
-|jpeg ->json | 0.0250 s | 0.0322 s | 
+|jpeg ->json | 0.0250 s | 0.0322 s |
 |jpeg ->原始帧 ->msgpack| 0.1072 s | 0.1118 s |
 |jpeg ->msgpack| 0.0121 s | 0.0288 s |
 |jpeg ->原始帧 ->pickle | 0.1143 s | 0.1314 s | 

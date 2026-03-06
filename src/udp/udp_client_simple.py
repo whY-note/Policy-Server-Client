@@ -2,7 +2,6 @@ from src.base.base_client import BaseClient
 import numpy as np
 import os
 import socket
-import time
 import json
 
 from src.utils.collecter import Collector
@@ -10,15 +9,11 @@ from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
 
-from src.udp.udp_config import *
-
 class UDPClient(BaseClient):
     def __init__(self, packaging_type):
         super().__init__()
         self.packaging_type = packaging_type
         self.collector = Collector()
-
-        self.recv_buffer = {}
 
     def connect(self, host, port, max_size = None):
         # 这里并不是真正的连接，因为UDP是无连接的协议，但我们需要记录服务器的地址以便发送数据
@@ -33,7 +28,6 @@ class UDPClient(BaseClient):
 
         payload = json.dumps(hello_msg).encode("utf-8")
         self.client_socket.sendto(payload, self.server_addr)
-        print("Sent registration message to server")
 
 
     def _send_msg(self, obj):
@@ -46,62 +40,24 @@ class UDPClient(BaseClient):
         else:
             raise ValueError("Unsupported packaging type")
         
-        chunks = [
-            payload[i : i + MAX_CHUNK_SIZE]
-            for i in range(0, len(payload), MAX_CHUNK_SIZE)
-        ]
+        print("payload size:", len(payload))
 
-        total_chunks = len(chunks)
-
-        msg_id = int(time.time()*1000) & 0xFFFFFFFF # use timestamp as message id, mod 2^32 to fit in 4 bytes
-
-        for chunk_id, chunk in enumerate(chunks):
-            header = struct.pack(
-                HEADER_FORMAT,
-                msg_id,
-                total_chunks,
-                chunk_id
-            )
-            packet = header + chunk
-            self.client_socket.sendto(packet, self.server_addr)
+        self.client_socket.sendto(payload, self.server_addr)
 
     def _recv_msg(self):
-        packet, addr = self.client_socket.recvfrom(65536)
-
-        header = packet[:HEADER_SIZE]
-        chunk = packet[HEADER_SIZE:]
-
-        msg_id, total_chunks, chunk_id = struct.unpack(
-            HEADER_FORMAT,header
-        )
-
-        if msg_id not in self.recv_buffer:
-            self.recv_buffer[msg_id] = {}
-        self.recv_buffer[msg_id][chunk_id] = chunk
-
-        if len(self.recv_buffer[msg_id]) < total_chunks:
-            return None
-        
-        payload = b''.join(
-            self.recv_buffer[msg_id][i]
-            for i in range(total_chunks)
-        )
-        del self.recv_buffer[msg_id]
+        data, addr = self.client_socket.recvfrom(65536)
 
         if self.packaging_type == "json":
-            return json_to_numpy(payload.decode("utf-8")) # json
+            return json_to_numpy(data.decode("utf-8")) # json
         elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(payload) # msgpack
+            return msgpack_numpy.unpackb(data) # msgpack
         elif self.packaging_type == "pickle":
-            return pickle.loads(payload) # pickle
+            return pickle.loads(data) # pickle
         else:
             raise ValueError("Unsupported packaging type")
     
     def get_obs(self):
-        while True:
-            obs = self._recv_msg()
-            if obs is not None:
-                break
+        obs = self._recv_msg()
         return obs
     
     def post_action(self, action):
@@ -116,16 +72,12 @@ class UDPClient(BaseClient):
     
     def step(self):
         obs = self.get_obs()
-        if obs is None:
-            print("Failed to receive complete message. Skipping this step.")
-            return False
-        elif obs == "close":
-            print("Received close signal from server. Shutting down client.")
-            return True
-        self.collector.collect(obs)
+        print(f"[Client] Received obs: {obs}")
+        # self.collector.collect(obs)
+
         action = self.infer(obs)
+
         self.post_action(action)
-        return False
 
     def close(self):
         self.client_socket.close()
@@ -135,4 +87,4 @@ class UDPClient(BaseClient):
         file_name = "episode0_udp_client_" + self.packaging_type + ".hdf5"
         file_path = os.path.join(file_dir, file_name)
 
-        self.collector.save_hdf5(file_path)
+        # self.collector.save_hdf5(file_path)

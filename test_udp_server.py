@@ -123,16 +123,16 @@ def run_udp_with_simple_msg(host, port, packaging_type):
 
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "json"  # json / msgpack / pickle
+    PACKAGING_TYPE = "pickle"  # json / msgpack / pickle
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    # run_udp(
-    #     host="0.0.0.0",
-    #     port=9000,
-    #     packaging_type=PACKAGING_TYPE 
-    # )
-    run_udp_with_simple_msg(
+    run_udp(
         host="0.0.0.0",
         port=9000,
-        packaging_type=PACKAGING_TYPE
+        packaging_type=PACKAGING_TYPE 
     )
+    # run_udp_with_simple_msg(
+    #     host="0.0.0.0",
+    #     port=9000,
+    #     packaging_type=PACKAGING_TYPE
+    # )

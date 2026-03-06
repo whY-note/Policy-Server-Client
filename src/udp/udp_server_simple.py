@@ -9,8 +9,6 @@ from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
 
-from src.udp.udp_config import *
-
 class UDPServer(BaseServer):
     def __init__(self, host, port, packaging_type="json"):
         super().__init__()
@@ -26,8 +24,6 @@ class UDPServer(BaseServer):
 
         self.client_addr = None
 
-        self.recv_buffer = {}
-
     
     def _send_msg(self, obj):
         if self.packaging_type == "json":
@@ -39,37 +35,21 @@ class UDPServer(BaseServer):
         else:
             raise ValueError("Unsupported packaging type")
         
-        chunks = [
-            payload[i : i + MAX_CHUNK_SIZE]
-            for i in range(0, len(payload), MAX_CHUNK_SIZE)
-        ]
-
-        total_chunks = len(chunks)
-
-        msg_id = int(time.time()*1000) & 0xFFFFFFFF # use timestamp as message id, mod 2^32 to fit in 4 bytes
+        print("payload size:", len(payload))
 
         if self.client_addr is None:
             raise RuntimeError("Client address unknown. Receive something first.")
 
-        for chunk_id,chunk in enumerate(chunks):
-            header = struct.pack(
-                HEADER_FORMAT,
-                msg_id,
-                total_chunks,
-                chunk_id
-            )
-            packet = header + chunk
+        self.server_socket.sendto(payload, self.client_addr)
 
-            self.server_socket.sendto(packet, self.client_addr)
-        
     def _recv_msg(self):
-        packet, addr = self.server_socket.recvfrom(65536)
-        print("received packet from:", addr)
+        data, addr = self.server_socket.recvfrom(65536)
 
         # record client address
         if self.client_addr is None:
+     
             try:
-                msg = json.loads(packet.decode("utf-8"))
+                msg = json.loads(data.decode("utf-8"))
             except Exception:
                 print(f"Invalid registration message from {addr}")
                 return None
@@ -84,30 +64,13 @@ class UDPServer(BaseServer):
         elif self.client_addr != addr:
             print(f"Received message from unknown client {addr}, expected {self.client_addr}. Ignoring.")
             return None
-        
-        header = packet[:HEADER_SIZE] # 头部
-        chunk = packet[HEADER_SIZE:] # 数据块
-
-        msg_id, total_chunks, chunk_id = struct.unpack(HEADER_FORMAT, header)
-
-        if msg_id not in self.recv_buffer:
-            self.recv_buffer[msg_id] = {}
-        self.recv_buffer[msg_id][chunk_id] = chunk
-
-        if len(self.recv_buffer[msg_id]) < total_chunks:
-            return None
-
-        # 收集齐,则合并成原始payload
-        payload = b''.join(self.recv_buffer[msg_id][i] for i in range(total_chunks))
-
-        del self.recv_buffer[msg_id]
 
         if self.packaging_type == "json":
-            return json_to_numpy(payload.decode("utf-8")) # json
+            return json_to_numpy(data.decode("utf-8")) # json
         elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(payload) # msgpack
+            return msgpack_numpy.unpackb(data) # msgpack
         elif self.packaging_type == "pickle":
-            return pickle.loads(payload) # pickle
+            return pickle.loads(data) # pickle
         else:
             raise ValueError("Unsupported packaging type")
         
@@ -115,18 +78,11 @@ class UDPServer(BaseServer):
         self._send_msg(obs)
 
     def get_action(self):
-        while True:
-            action = self._recv_msg() # action 可能未收集齐，因此可能返回None，此时继续等待直到收集齐为止
-            if action is not None:
-                 break
+        action = self._recv_msg()
         print(f"Received action: {action}")
         return action
     
     def close(self):
-        # 给 client 发送一个特殊消息，通知其关闭
-        if self.client_addr is not None:
-            close_msg = "close"
-            self._send_msg(close_msg)
         self.server_socket.close()
 
     
