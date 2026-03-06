@@ -16,7 +16,7 @@ do
     sed -i "s/^protocol:.*/protocol: $protocol/" $CONFIG
     sed -i "s/^packaging_type:.*/packaging_type: $packaging/" $CONFIG
 
-    python server.py
+    python test_server.py
 
   done
 done
