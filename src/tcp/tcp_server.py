@@ -3,10 +3,10 @@ import socket
 import json
 import struct
 from src.base.base_server import BaseServer
-from src.utils.json_numpy import numpy_to_json, json_to_numpy
 
 import time
 import sys
+from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
 
@@ -47,6 +47,8 @@ class TCPServer(BaseServer):
             payload = msgpack_numpy.packb(obj) # msgpack
         elif self.packaging_type == "pickle":
             payload = pickle.dumps(obj) # pickle
+        else:
+            raise ValueError("Unsupported packaging type")
 
         msg = struct.pack('!I', len(payload)) + payload # '!I' means big-endian unsigned int
         print("msg size:", len(msg))
@@ -63,6 +65,8 @@ class TCPServer(BaseServer):
             return msgpack_numpy.unpackb(data) # msgpack
         elif self.packaging_type == "pickle":
             return pickle.loads(data) # pickle
+        else:
+            raise ValueError("Unsupported packaging type")
 
     def post_obs(self, obs: dict) -> None:
         self._send_msg(obs)

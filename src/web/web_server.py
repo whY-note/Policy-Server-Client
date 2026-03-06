@@ -42,6 +42,8 @@ class WebServer(BaseServer):
                         data = msgpack_numpy.unpackb(message)  # msgpack
                     elif self.packaging_type == "pickle":
                         data = pickle.loads(message) # pickle
+                    else:
+                        raise ValueError("Unsupported packaging type")
 
                     if data.get("type") == "action":
                         if self.packaging_type == "json":
