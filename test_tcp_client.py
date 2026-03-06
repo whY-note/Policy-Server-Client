@@ -2,7 +2,7 @@ from src.tcp.tcp_client import TCPClient
 
 
 if __name__ =="__main__":
-    PACKAGING_TYPE = "pickle"
+    PACKAGING_TYPE = "json"
 
     client = TCPClient(packaging_type = PACKAGING_TYPE)
 

@@ -1,7 +1,7 @@
 from src.web.web_client import WebClient
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "json"
+    PACKAGING_TYPE = "msgpack" # "json", "msgpack" or "pickle"
 
     host = "localhost"
     port = 9000

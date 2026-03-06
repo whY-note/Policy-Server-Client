@@ -5,7 +5,7 @@ import os
 import time
 
 if __name__ == "__main__":
-    PACKAGING_TYPE = "json" # "json", "msgpack" or "pickle"
+    PACKAGING_TYPE = "msgpack" # "json", "msgpack" or "pickle"
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,7 +15,7 @@ if __name__ == "__main__":
     print(f"file path: {file_path}")
     async def main():
 
-        server = WebServer(port=9000, packaging_type=PACKAGING_TYPE)
+        server = WebServer(host="0.0.0.0", port=9000, packaging_type=PACKAGING_TYPE)
 
         # 启动 WebSocket 服务器
         server_task = asyncio.create_task(server.start())

@@ -29,7 +29,7 @@ def main(host, port):
             for idx in range(test_num):
                 
                 # print("jpeg size:", len(rgb_dataset_head_camera[idx]))
-                if PACKAGING_TYPE == "pickle":
+                if PACKAGING_TYPE == "json":
                     obs = {
                             "joint_action": {
                                 "left_arm": left_arm_dataset[idx],
@@ -104,7 +104,7 @@ def main(host, port):
 
 if __name__== "__main__":
 
-    PACKAGING_TYPE = "pickle"
+    PACKAGING_TYPE = "json"
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     file_dir = os.path.join(BASE_DIR, "data")
