@@ -1,3 +1,4 @@
+from src.serializer.base_serializer import BaseSerializer
 import json
 import numpy as np
 import base64
@@ -70,3 +71,11 @@ def json_to_numpy(json_str: str) -> Any:
         return dct
 
     return json.loads(json_str, object_hook=object_hook)
+
+
+class JsonSerializer(BaseSerializer):
+    def serialize(self, data: Any) -> bytes:
+        return numpy_to_json(data).encode("utf-8")
+    
+    def deserialize(self, raw_bytes: bytes) -> Any:
+        return json_to_numpy(raw_bytes.decode("utf-8"))

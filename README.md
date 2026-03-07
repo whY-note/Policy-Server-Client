@@ -109,6 +109,7 @@ ssh -p 6361 -L 9000:localhost:9000 root@120.48.23.252
 - [x] 整理好result的结构
 - [x] UDP加入整体架构中
 - [x] UDP测试
+- [x] 加入序列化方法的抽象类,并将json,msgpack,pickle写成类，继承这个抽象类
 - [ ] 尝试将TCP也变成异步, 用`async`
 
 ## 知识

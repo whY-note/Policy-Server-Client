@@ -19,6 +19,7 @@ import functools
 import msgpack
 import numpy as np
 
+from src.serializer.base_serializer import BaseSerializer
 
 def pack_array(obj):
     if (isinstance(obj, (np.ndarray, np.generic))) and obj.dtype.kind in ("V", "O", "c"):
@@ -57,3 +58,11 @@ packb = functools.partial(msgpack.packb, default=pack_array)
 
 Unpacker = functools.partial(msgpack.Unpacker, object_hook=unpack_array)
 unpackb = functools.partial(msgpack.unpackb, object_hook=unpack_array)
+
+
+class MsgPackSerializer(BaseSerializer):
+    def serialize(self, data) -> bytes:
+        return packb(data)
+    
+    def deserialize(self, raw_bytes: bytes):
+        return unpackb(raw_bytes)

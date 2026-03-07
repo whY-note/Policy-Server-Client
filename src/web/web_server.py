@@ -3,12 +3,12 @@ from websockets.server import serve
 import numpy as np
 import json
 import asyncio
-from src.utils.json_numpy import numpy_to_json, json_to_numpy
 import time
 
 import sys
-import src.utils.msgpack_numpy as msgpack_numpy
-import pickle
+
+from src.utils.json_numpy import numpy_to_json, json_to_numpy
+from src.serializer import create_serializer
 
 class WebServer(BaseServer):
 
@@ -17,35 +17,28 @@ class WebServer(BaseServer):
         self.host = host
         self.port = port
 
-        self._ws = None
+        self.ws = None
         self._action_queue = asyncio.Queue()
         self._msg_queue = asyncio.Queue()
         self._connected_event = asyncio.Event()
 
         self.packaging_type = packaging_type
-
-        self.packer = msgpack_numpy.Packer()
+        self.serializer = create_serializer(packaging_type)
+        # self.packer = msgpack_numpy.Packer()
 
     async def start(self):
         # 启动服务器
         async def handler(websocket):
             # 处理客户端的连接和信息
             print("Client connected")
-            self._ws = websocket
+            self.ws = websocket
             self._connected_event.set() # 通知其他协程客户端已连接
 
             try:
                 # 每次收到一个message, sever就会从中解析出action并放入队列中
                 async for message in websocket:
-                    if self.packaging_type == "json":
-                        data = json.loads(message)  # json
-                    elif self.packaging_type == "msgpack":
-                        data = msgpack_numpy.unpackb(message)  # msgpack
-                    elif self.packaging_type == "pickle":
-                        data = pickle.loads(message) # pickle
-                    else:
-                        raise ValueError("Unsupported packaging type")
-                    
+                    data = self.serializer.deserialize(message)
+
                     if data.get("type") == "action":
                         if self.packaging_type == "json":
                             action = json_to_numpy(data["action"]) # json
@@ -53,6 +46,7 @@ class WebServer(BaseServer):
                             action = data["action"]  # msgpack, pickle
                         await self._action_queue.put(action)
                     else:
+                        # 其他消息
                         await self._msg_queue.put(data)
 
 
@@ -65,7 +59,7 @@ class WebServer(BaseServer):
                     await websocket.close()
 
                 self._connected_event.clear()
-                self._ws = None
+                self.ws = None
                 print("Websocket closed.")
 
         print(f"WebServer running on ws://{self.host}:{self.port}")
@@ -97,15 +91,8 @@ class WebServer(BaseServer):
 
     async def _send_msg(self, payload):
         try:
-            if self.packaging_type == "json":
-                await self._ws.send(json.dumps(payload)) # json
-            elif self.packaging_type == "msgpack":
-                packed_payload = self.packer.pack(payload) # msgpack
-                await self._ws.send(packed_payload) 
-            elif self.packaging_type == "pickle":
-                packed_payload = pickle.dumps(payload) # pickle
-                print(f"size of packed_payload: {sys.getsizeof(packed_payload)} bytes")
-                await self._ws.send(packed_payload) 
+            packed_payload = self.serializer.serialize(payload)
+            await self.ws.send(packed_payload) 
 
         except Exception as e:
             print("Send failed:", e)

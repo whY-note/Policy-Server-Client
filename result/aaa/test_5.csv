@@ -1,2 +1,0 @@
-user_name,packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config
-aaa,msgpack,100,0.012960000000311993,0.17296999999969556,web,test_5

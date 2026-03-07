@@ -8,7 +8,7 @@ import json
 from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
-
+from src.serializer import create_serializer
 from src.udp.udp_config import *
 
 class UDPServer(BaseServer):
@@ -18,6 +18,7 @@ class UDPServer(BaseServer):
         self.host = host
         self.port = port
         self.packaging_type = packaging_type
+        self.serializer = create_serializer(packaging_type)
         
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.bind((self.host, self.port))
@@ -30,14 +31,8 @@ class UDPServer(BaseServer):
 
     
     def _send_msg(self, obj):
-        if self.packaging_type == "json":
-            payload = numpy_to_json(obj).encode("utf-8") # json
-        elif self.packaging_type == "msgpack":
-            payload = msgpack_numpy.packb(obj) # msgpack
-        elif self.packaging_type == "pickle":
-            payload = pickle.dumps(obj) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+
+        payload = self.serializer.serialize(obj)
         
         chunks = [
             payload[i : i + MAX_CHUNK_SIZE]
@@ -84,14 +79,7 @@ class UDPServer(BaseServer):
 
         del self.recv_buffer[msg_id]
 
-        if self.packaging_type == "json":
-            msg = json_to_numpy(payload.decode("utf-8")) # json
-        elif self.packaging_type == "msgpack":
-            msg = msgpack_numpy.unpackb(payload) # msgpack
-        elif self.packaging_type == "pickle":
-            msg = pickle.loads(payload) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+        msg = self.serializer.deserialize(payload)
         
         # record client address
         if self.client_addr is None:

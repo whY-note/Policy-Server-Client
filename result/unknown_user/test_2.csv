@@ -1,2 +1,0 @@
-packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config
-msgpack,100,0.0,0.004690000000045984,tcp,test_2

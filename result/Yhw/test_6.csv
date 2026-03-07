@@ -1,2 +1,0 @@
-user_name,packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config
-Yhw,pickle,100,0.0,0.02422000000005937,web,test_6

@@ -10,6 +10,8 @@ from src.utils.json_numpy import numpy_to_json, json_to_numpy
 from src.utils import msgpack_numpy
 import pickle
 
+from src.serializer import create_serializer
+
 from src.udp.udp_config import *
 
 class UDPClient(BaseClient):
@@ -19,6 +21,7 @@ class UDPClient(BaseClient):
         self.collector = Collector()
 
         self.recv_buffer = {}
+        self.serializer = create_serializer(packaging_type)
 
     def connect(self, host, port, max_size = None):
         # 这里并不是真正的连接，因为UDP是无连接的协议，但我们需要记录服务器的地址以便发送数据
@@ -37,14 +40,7 @@ class UDPClient(BaseClient):
 
 
     def _send_msg(self, obj):
-        if self.packaging_type == "json":
-            payload = numpy_to_json(obj).encode("utf-8") # json
-        elif self.packaging_type == "msgpack":
-            payload = msgpack_numpy.packb(obj) # msgpack
-        elif self.packaging_type == "pickle":
-            payload = pickle.dumps(obj) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+        payload = self.serializer.serialize(obj)
         
         chunks = [
             payload[i : i + MAX_CHUNK_SIZE]
@@ -88,14 +84,7 @@ class UDPClient(BaseClient):
         )
         del self.recv_buffer[msg_id]
 
-        if self.packaging_type == "json":
-            return json_to_numpy(payload.decode("utf-8")) # json
-        elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(payload) # msgpack
-        elif self.packaging_type == "pickle":
-            return pickle.loads(payload) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+        return self.serializer.deserialize(payload)
     
     def _recv_msg(self):
         while True:

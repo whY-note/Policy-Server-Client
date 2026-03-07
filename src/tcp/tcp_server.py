@@ -6,15 +6,15 @@ from src.base.base_server import BaseServer
 
 import time
 import sys
-from src.utils.json_numpy import numpy_to_json, json_to_numpy
-from src.utils import msgpack_numpy
-import pickle
+from src.serializer import create_serializer
 
 class TCPServer(BaseServer):
     def __init__(self, host = "0.0.0.0", port = 12000, packaging_type="json"):
         super().__init__()
         self.host = host
         self.port = port
+        self.packaging_type = packaging_type
+        self.serializer = create_serializer(packaging_type)
 
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind((self.host, self.port))
@@ -25,7 +25,6 @@ class TCPServer(BaseServer):
         self.conn = None
         self.addr = None
 
-        self.packaging_type = packaging_type
     def accept_connection(self):
         print("Waiting for a client to connect...")
         self.conn, self.addr = self.server_socket.accept()
@@ -41,14 +40,7 @@ class TCPServer(BaseServer):
         return data
     
     def _send_msg(self, obj):
-        if self.packaging_type == "json":
-            payload = numpy_to_json(obj).encode("utf-8") # json
-        elif self.packaging_type == "msgpack":
-            payload = msgpack_numpy.packb(obj) # msgpack
-        elif self.packaging_type == "pickle":
-            payload = pickle.dumps(obj) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+        payload = self.serializer.serialize(obj)
 
         msg = struct.pack('!I', len(payload)) + payload # '!I' means big-endian unsigned int
         print("msg size:", len(msg))
@@ -59,14 +51,7 @@ class TCPServer(BaseServer):
         msg_len = struct.unpack('!I', raw_len)[0]
         data = self._recv_all(msg_len)
 
-        if self.packaging_type == "json":
-            return json_to_numpy(data.decode("utf-8")) # json
-        elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(data) # msgpack
-        elif self.packaging_type == "pickle":
-            return pickle.loads(data) # pickle
-        else:
-            raise ValueError("Unsupported packaging type")
+        return self.serializer.deserialize(data)
 
     def post_obs(self, obs: dict) -> None:
         self._send_msg(obs)

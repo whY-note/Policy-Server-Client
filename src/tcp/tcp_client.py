@@ -6,15 +6,14 @@ import json
 import struct
 from src.utils.collecter import Collector
 
-from src.utils.json_numpy import numpy_to_json, json_to_numpy
-from src.utils import msgpack_numpy
-import pickle
+from src.serializer import create_serializer
 
 class TCPClient(BaseClient):
     def __init__(self, packaging_type):
         super().__init__()
         self.packaging_type = packaging_type
         self.collector = Collector()
+        self.serializer = create_serializer(packaging_type)
 
     def connect(self, host, port):
         self.host = host
@@ -39,21 +38,11 @@ class TCPClient(BaseClient):
         (msg_len,) = struct.unpack("!I", raw_len)
         data = self._recv_all(msg_len)
 
-        if self.packaging_type == "json":
-            return json_to_numpy(data.decode("utf-8")) # json
-        elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(data) # msgpack
-        elif self.packaging_type == "pickle":
-            return pickle.loads(data) # pickle
-
+        return self.serializer.deserialize(data)
+    
     def _send_msg(self, obj):
-        if self.packaging_type == "json":
-            payload = numpy_to_json(obj).encode("utf-8") # json
-        elif self.packaging_type == "msgpack":
-            payload = msgpack_numpy.packb(obj) # msgpack
-        elif self.packaging_type == "pickle":
-            payload = pickle.dumps(obj) # pickle
-
+        payload = self.serializer.serialize(obj)
+        
         msg = struct.pack("!I", len(payload)) + payload
         self.client_socket.sendall(msg)
 

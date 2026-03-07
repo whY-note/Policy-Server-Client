@@ -1,9 +1,0 @@
-packaging_type,test_num,avg_decode_time,avg_RTT,protocol,config
-json,100,0.0,0.03077999999994063,web,test_4
-HaowenYan,json,100,0.0,0.030940000000045983,web,test_4
-HaowenYan,json,100,0.0,0.03110000000000582,web,test_4
-HaowenYan,json,100,0.0,0.030939999999973225,web,test_4
-HaowenYan,json,100,0.0,0.03125,web,test_4
-HaowenYan,json,100,0.0,0.030469999999986612,web,test_4
-HaowenYan,json,100,0.0,0.03171999999998661,web,test_4
-HaowenYan,json,100,0.0,0.03,web,test_4
