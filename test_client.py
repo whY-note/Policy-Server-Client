@@ -1,45 +1,32 @@
-from src.base.base_client import BaseClient
-from src.tcp.tcp_client import TCPClient
-from src.web.web_client import WebClient
-from src.utils.utils import load_yaml, jpeg_to_img
+from src.utils.utils import load_yaml
+from src.api.run_client import run_client
+import argparse
 
-from websockets.exceptions import ConnectionClosedOK
-from websockets.exceptions import ConnectionClosedError
+def parse_args():
+    parser = argparse.ArgumentParser(description="Test server script")
 
-def create_client(protocol, packaging_type) -> BaseClient:
-    if protocol == "tcp":
-        return TCPClient(packaging_type=packaging_type)
-    elif protocol == "web":
-        return WebClient(packaging_type=packaging_type)
-    else:
-        raise ValueError(f"Unsupported protocol: {protocol}")
+    parser.add_argument(
+        "--test",
+        type=str,
+        required=False,
+        default=None,
+        help="Test number"
+    )
 
-def main(protocol, host, port, packaging_type):
-    client = create_client(protocol, packaging_type)
-
-    try:
-        client.connect(host, port)
-        print("[INFO] Connected.")
-        while True:
-            client.step()
-    except KeyboardInterrupt:
-        print("[INFO] Interrupted by user.")
-        client.close()
-    except ConnectionError:
-        print("[INFO] Server exited.")
-    except ConnectionClosedOK:
-        print("[INFO] Connection closed by server.")
-    except ConnectionClosedError:
-        print(f"[ERROR] Connection closed with error: {e}")
-    except Exception as e:
-        print(f"[ERROR] {e}")
-    finally:
-        print("[INFO] Closing connection.")
-        client.close()
-        print("[INFO] Client exited.")
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
-    config_path = "./config/config.yml"
+
+    args = parse_args()
+
+    if args.test is None:
+        config_name = "default" # 采用默认配置
+        print("No test specified, using default config.")
+    else:
+        config_name = "test_" + args.test
+    config_path = "./config/"+ config_name +".yml"
+    print(f"Loading config from {config_path}")
     config = load_yaml(config_path)
 
     protocol = config["protocol"]
@@ -53,8 +40,4 @@ if __name__ == "__main__":
     print("Host: ", host)
     print("Port: ", port)
 
-    main(protocol, host, port, packaging_type)
-
-
-    
-
+    run_client(protocol, host, port, packaging_type)

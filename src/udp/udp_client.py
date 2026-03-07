@@ -26,14 +26,14 @@ class UDPClient(BaseClient):
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         print(f"UDP Client ready to send to {host}:{port}")
 
-        # 发送第一条信息给服务器，触发服务器记录客户端地址
-        hello_msg = {
-            "type": "register"
-        }
+        # # 发送第一条信息给服务器，触发服务器记录客户端地址
+        # hello_msg = {
+        #     "type": "register"
+        # }
 
-        payload = json.dumps(hello_msg).encode("utf-8")
-        self.client_socket.sendto(payload, self.server_addr)
-        print("Sent registration message to server")
+        # payload = json.dumps(hello_msg).encode("utf-8")
+        # self.client_socket.sendto(payload, self.server_addr)
+        # print("Sent registration message to server")
 
 
     def _send_msg(self, obj):
@@ -65,7 +65,7 @@ class UDPClient(BaseClient):
             packet = header + chunk
             self.client_socket.sendto(packet, self.server_addr)
 
-    def _recv_msg(self):
+    def _recv_all(self):
         packet, addr = self.client_socket.recvfrom(65536)
 
         header = packet[:HEADER_SIZE]
@@ -97,11 +97,15 @@ class UDPClient(BaseClient):
         else:
             raise ValueError("Unsupported packaging type")
     
-    def get_obs(self):
+    def _recv_msg(self):
         while True:
-            obs = self._recv_msg()
-            if obs is not None:
+            msg = self._recv_all() # action 可能未收集齐，因此可能返回None，此时继续等待直到收集齐为止
+            if msg is not None:
                 break
+        return msg
+    
+    def get_obs(self):
+        obs = self._recv_msg()
         return obs
     
     def post_action(self, action):

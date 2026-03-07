@@ -1,12 +1,14 @@
 from src.udp.udp_client import UDPClient
-import numpy as np
 
 def run_udp_client(host="127.0.0.1", port=9000, packaging_type="json"):
 
     client = UDPClient(packaging_type)
-    client.connect(host, port)
 
     try:
+        client.connect(host, port)
+
+        client._send_msg({"type": "user_name", "user_name": "unknown_user"})
+
         while True:
             finished = client.step()
             if finished:

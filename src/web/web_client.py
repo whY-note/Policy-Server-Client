@@ -23,8 +23,7 @@ class WebClient(BaseClient):
         print(f"url:{self.server_url}")
         self.ws = websockets.sync.client.connect(self.server_url, max_size = max_size)
 
-    def get_obs(self):
-
+    def _recv_msg(self):
         message = self.ws.recv()  # 阻塞等待
 
         if self.packaging_type == "json":
@@ -33,6 +32,21 @@ class WebClient(BaseClient):
             data = msgpack_numpy.unpackb(message) # msgpack
         elif self.packaging_type == "pickle":
             data = pickle.loads(message) # pickle
+        return data
+    
+    def _send_msg(self, payload):
+        if self.packaging_type == "json":
+            self.ws.send(json.dumps(payload)) # json
+        elif self.packaging_type == "msgpack":
+            packed_payload = self.packer.pack(payload)  # msgpack
+            self.ws.send(packed_payload) 
+        elif self.packaging_type == "pickle":
+            packed_payload = pickle.dumps(payload) # pickle
+            self.ws.send(packed_payload) 
+
+    def get_obs(self):
+
+        data = self._recv_msg()
 
         if data.get("type") != "obs":
             raise ValueError("Unexpected message type")
@@ -61,15 +75,8 @@ class WebClient(BaseClient):
                 "type": "action",
                 "action": action  # msgpack, pickle
             }
+        self._send_msg(payload)
 
-        if self.packaging_type == "json":
-            self.ws.send(json.dumps(payload)) # json
-        elif self.packaging_type == "msgpack":
-            packed_payload = self.packer.pack(payload)  # msgpack
-            self.ws.send(packed_payload) 
-        elif self.packaging_type == "pickle":
-            packed_payload = pickle.dumps(payload) # pickle
-            self.ws.send(packed_payload) 
 
     def infer(self, obs) -> np.ndarray:
         return np.zeros(14, dtype=np.float64)
@@ -79,8 +86,8 @@ class WebClient(BaseClient):
         self.collector.collect(obs)
         # print(f"Received obs: {obs}")
         action = self.infer(obs)
-        
         self.post_action(action)
+        return False 
 
     def close(self):
         self.ws.close()

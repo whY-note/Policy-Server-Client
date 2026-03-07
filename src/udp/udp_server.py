@@ -62,29 +62,11 @@ class UDPServer(BaseServer):
 
             self.server_socket.sendto(packet, self.client_addr)
         
-    def _recv_msg(self):
+    def _recv_all(self):
         packet, addr = self.server_socket.recvfrom(65536)
         print("received packet from:", addr)
 
-        # record client address
-        if self.client_addr is None:
-            try:
-                msg = json.loads(packet.decode("utf-8"))
-            except Exception:
-                print(f"Invalid registration message from {addr}")
-                return None
-            
-            if isinstance(msg, dict) and msg.get("type") == "register":
-                self.client_addr = addr
-                print(f"Client registered: {self.client_addr}")
-                return None
-            else:
-                print(f"First message must be register. Received from {addr}")
-                return None
-        elif self.client_addr != addr:
-            print(f"Received message from unknown client {addr}, expected {self.client_addr}. Ignoring.")
-            return None
-        
+        # 收集所有分片        
         header = packet[:HEADER_SIZE] # 头部
         chunk = packet[HEADER_SIZE:] # 数据块
 
@@ -103,22 +85,40 @@ class UDPServer(BaseServer):
         del self.recv_buffer[msg_id]
 
         if self.packaging_type == "json":
-            return json_to_numpy(payload.decode("utf-8")) # json
+            msg = json_to_numpy(payload.decode("utf-8")) # json
         elif self.packaging_type == "msgpack":
-            return msgpack_numpy.unpackb(payload) # msgpack
+            msg = msgpack_numpy.unpackb(payload) # msgpack
         elif self.packaging_type == "pickle":
-            return pickle.loads(payload) # pickle
+            msg = pickle.loads(payload) # pickle
         else:
             raise ValueError("Unsupported packaging type")
         
+        # record client address
+        if self.client_addr is None:
+            if isinstance(msg, dict) and msg.get("type") == "user_name":
+                self.client_addr = addr
+                print(f"Client {self.client_addr} registered")
+                return msg
+            else:
+                raise ValueError(f"First message must be user_name. Received from {addr}")
+        elif self.client_addr != addr:
+            print(f"Received message from unknown client {addr}, expected {self.client_addr}. Ignoring.")
+            return None
+        else: # self.client_addr == addr
+            return msg
+    
+    def _recv_msg(self):
+        while True:
+            msg = self._recv_all() # action 可能未收集齐，因此可能返回None，此时继续等待直到收集齐为止
+            if msg is not None:
+                break
+        return msg
+
     def post_obs(self, obs):
         self._send_msg(obs)
 
     def get_action(self):
-        while True:
-            action = self._recv_msg() # action 可能未收集齐，因此可能返回None，此时继续等待直到收集齐为止
-            if action is not None:
-                 break
+        action = self._recv_msg()
         print(f"Received action: {action}")
         return action
     

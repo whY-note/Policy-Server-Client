@@ -1,239 +1,95 @@
-from src.tcp.tcp_server import TCPServer
-from src.web.web_server import WebServer
-
-import time
-from src.utils.utils import  load_yaml, jpeg_to_img
-import os
-import h5py
-
+from src.utils.utils import load_yaml
+from src.api.run_server import run_udp, run_tcp, run_web
 import asyncio
+import os
+import pandas as pd
+import argparse
 
-def run_tcp(host, port, packaging_type):
-    server = TCPServer(host, port, packaging_type)
-    server.accept_connection()
+def parse_args():
+    parser = argparse.ArgumentParser(description="Test server script")
 
-    try:
-        with h5py.File(file_path, "r") as f:
-            # load data from hdf5 file
-            rgb_dataset_head_camera = f["observation/head_camera/rgb"]
-            rgb_dataset_left_camera = f["observation/left_camera/rgb"] 
-            rgb_dataset_right_camera = f["observation/right_camera/rgb"]
+    parser.add_argument(
+        "--test",
+        type=str,
+        required=False,
+        default=None,
+        help="Test number"
+    )
 
-            left_arm_dataset = f["joint_action/left_arm"][:]
-            left_gripper_dataset = f["joint_action/left_gripper"][:]
-            right_arm_dataset = f["joint_action/right_arm"][:]
-            right_gripper_dataset = f["joint_action/right_gripper"][:]
+    args = parser.parse_args()
+    return args
 
-            test_num = min(100, len(rgb_dataset_head_camera))
-            print("test_num: ", test_num)
-            decode_time = 0
-            start_time = time.monotonic()
+def record_result(res, config_name):
+    user_name = res.get("user_name", "unknown_user")
 
-            for idx in range(test_num):
-                # print("jpeg size:", len(rgb_dataset_head_camera[idx]))
-                if packaging_type == "json":
-                    obs = {
-                            "joint_action": {
-                                "left_arm": left_arm_dataset[idx],
-                                "left_gripper": left_gripper_dataset[idx],
-                                "right_arm": right_arm_dataset[idx],
-                                "right_gripper": right_gripper_dataset[idx],
-                            },
-                            "observation": {
-                                "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
-                                "left_camera": bytes(rgb_dataset_left_camera[idx]), 
-                                "right_camera": bytes(rgb_dataset_right_camera[idx]),
-                            }
-                        }
-                    
-                elif packaging_type == "msgpack" or packaging_type == "pickle":
-                    # decode_start_time = time.monotonic()
+    user_name = user_name.replace(" ", "_") # 替换空格为下划线，避免文件路径问题
 
-                    # # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
-                    
-                    # img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
-                    # img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
-                    # img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
+    # 创建用户目录
+    dir_path = os.path.join("result", user_name)
+    os.makedirs(dir_path, exist_ok=True)
 
-                    # # print(f"size of img: {img_head_camera.nbytes} bytes")
-            
-                    # decode_end_time = time.monotonic()
-                    # decode_time += (decode_end_time - decode_start_time)
+    # 转成 DataFrame
+    df = pd.DataFrame([res])
 
-                    # obs = {
-                    #         "joint_action": {
-                    #             "left_arm": left_arm_dataset[idx],
-                    #             "left_gripper": left_gripper_dataset[idx],
-                    #             "right_arm": right_arm_dataset[idx],
-                    #             "right_gripper": right_gripper_dataset[idx],
-                    #         },
-                    #         "observation": {
-                    #             # 已经是单张图片了，不用再取索引
-                    #             "head_camera": img_head_camera,
-                    #             "left_camera": img_left_camera,
-                    #             "right_camera": img_right_camera,
-                    #         } 
-                    #     }
-                
-                    obs = {
-                            "joint_action": {
-                                "left_arm": left_arm_dataset[idx],
-                                "left_gripper": left_gripper_dataset[idx],
-                                "right_arm": right_arm_dataset[idx],
-                                "right_gripper": right_gripper_dataset[idx],
-                            },
-                            "observation": {
-                                "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
-                                "left_camera": bytes(rgb_dataset_left_camera[idx]), 
-                                "right_camera": bytes(rgb_dataset_right_camera[idx]),
-                            }
-                        }
-                    
-                server.post_obs(obs)
-                action = server.get_action()
+    # CSV 路径
+    file_path = os.path.join(dir_path, f"{config_name}.csv")
 
-            end_time = time.monotonic()
-
-            print(f"Average decode time: {decode_time / test_num:.4f} seconds")
-            print(f"Average round-trip time: {(end_time - start_time - decode_time) / test_num:.4f} seconds")
-
-    except KeyboardInterrupt:
-        print("Shutting down server...")
-    finally:
-        server.close()
-
-async def run_web(host, port, packaging_type):
-
-    server = WebServer(host, port, packaging_type)
-
-    # 启动 WebSocket 服务器
-    server_task = asyncio.create_task(server.start())
-
-    print("Waiting for client...")
-    await server._connected_event.wait()
-    print("Client connected!")
-
-    # 模拟机器人控制循环
-    try:
-        with h5py.File(file_path, "r") as f:
-            # load data from hdf5 file
-            rgb_dataset_head_camera = f["observation/head_camera/rgb"]
-            rgb_dataset_left_camera = f["observation/left_camera/rgb"] 
-            rgb_dataset_right_camera = f["observation/right_camera/rgb"]
-
-            left_arm_dataset = f["joint_action/left_arm"][:]
-            left_gripper_dataset = f["joint_action/left_gripper"][:]
-            right_arm_dataset = f["joint_action/right_arm"][:]
-            right_gripper_dataset = f["joint_action/right_gripper"][:]
-
-            test_num = min(100, len(rgb_dataset_head_camera))
-            print("test_num: ", test_num)
-            decode_time = 0
-            start_time = time.monotonic()
-
-            for idx in range(test_num):
-                if packaging_type == "json":
-                    obs = {
-                        "joint_action": {
-                            "left_arm": left_arm_dataset[idx],
-                            "left_gripper": left_gripper_dataset[idx],
-                            "right_arm": right_arm_dataset[idx],
-                            "right_gripper": right_gripper_dataset[idx],
-                        },
-                        "observation": {
-                            "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
-                            "left_camera": bytes(rgb_dataset_left_camera[idx]), 
-                            "right_camera": bytes(rgb_dataset_right_camera[idx]),
-                        }
-                    }
-                elif packaging_type == "msgpack" or packaging_type == "pickle":
-                    # decode_start_time = time.monotonic()
-
-                    # # print(f"size of rgb_data: {len(rgb_dataset_head_camera[idx])} bytes")
-                    
-                    # img_head_camera = jpeg_to_img(rgb_dataset_head_camera[idx]) # np.ndarray
-                    # img_left_camera = jpeg_to_img(rgb_dataset_left_camera[idx]) # np.ndarray
-                    # img_right_camera = jpeg_to_img(rgb_dataset_right_camera[idx]) # np.ndarray
-
-                    # # print(f"size of img: {img_head_camera.nbytes} bytes")
-            
-                    # decode_end_time = time.monotonic()
-                    # decode_time += (decode_end_time - decode_start_time)
-
-                    # obs = {
-                    #         "joint_action": {
-                    #             "left_arm": left_arm_dataset[idx],
-                    #             "left_gripper": left_gripper_dataset[idx],
-                    #             "right_arm": right_arm_dataset[idx],
-                    #             "right_gripper": right_gripper_dataset[idx],
-                    #         },
-                    #         "observation": {
-                    #             # 已经是单张图片了，不用再取索引
-                    #             "head_camera": img_head_camera,
-                    #             "left_camera": img_left_camera,
-                    #             "right_camera": img_right_camera,
-                    #         } 
-                    #     }
-
-                    obs = {
-                        "joint_action": {
-                            "left_arm": left_arm_dataset[idx],
-                            "left_gripper": left_gripper_dataset[idx],
-                            "right_arm": right_arm_dataset[idx],
-                            "right_gripper": right_gripper_dataset[idx],
-                        },
-                        "observation": {
-                            "head_camera": bytes(rgb_dataset_head_camera[idx]), # type(rgb_dataset_head_camera[idx]) = np.bytes, cannot be transformed to json
-                            "left_camera": bytes(rgb_dataset_left_camera[idx]), 
-                            "right_camera": bytes(rgb_dataset_right_camera[idx]),
-                        }
-                    }
-
-                await server.post_obs(obs)
-
-                try:
-                    action = await server.get_action(timeout=10)
-                    print("Received action:", action)
-                except TimeoutError:
-                    print("No action received (timeout)")
-
-                # await asyncio.sleep(0.1)
-            end_time = time.monotonic()
-            print(f"Average decode time: {decode_time / test_num:.4f} seconds")
-            print(f"Average round-trip time: {(end_time - start_time - decode_time) / test_num:.4f} seconds")
-
-    except KeyboardInterrupt:
-        print("Shutting down server...")
-        server_task.cancel()
+    # 如果文件已存在就追加
+    if os.path.exists(file_path):
+        df.to_csv(file_path, mode="a", header=False, index=False)
+    else:
+        df.to_csv(file_path, mode="w", header=True, index=False)
 
 
 if __name__ == "__main__":
 
-    config_path = "./config/config.yml"
+    args = parse_args()
+
+    if args.test is None:
+        config_name = "default" # 采用默认配置
+        print("No test specified, using default config.")
+    else:
+        config_name = "test_" + args.test
+    config_path = "./config/"+ config_name +".yml"
+    print(f"Loading config from {config_path}")
     config = load_yaml(config_path)
 
     protocol = config["protocol"]
     packaging_type = config["packaging_type"]
     host = config["server"]["host"]
     port = config["server"]["port"]
+    is_jpeg = config["is_jpeg"]
+
     print("Config: ")
     print("Protocol: ", protocol)
     print("Packaging type: ", packaging_type)
     print("Host: ", host)
     print("Port: ", port)
+    print("is_jpeg: ", is_jpeg)
 
-    file_name = config["test_file_name"]
+    test_file_name = config["test_file_name"]
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     file_dir = os.path.join(BASE_DIR, "data")
-    file_path = os.path.join(file_dir, file_name)
+    file_path = os.path.join(file_dir, test_file_name)
     print(f"Test file path: {file_path}")
-
+    
     if protocol == "tcp":
-        run_tcp(host = host, port = port, packaging_type = packaging_type)
+        res = run_tcp(host = host, port = port, packaging_type = packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
     elif protocol == "web":
-        asyncio.run(run_web(host=host, port=port, packaging_type=packaging_type))
+        res = asyncio.run(
+            run_web(host=host, port=port, packaging_type=packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
+            )
+    elif protocol == "udp": 
+        res = run_udp(host = host, port = port, packaging_type = packaging_type, test_file_path = file_path, is_jpeg = is_jpeg)
     else:
         raise NotImplementedError(f"Unsupported protocol: {protocol}")
+    
+    res["protocol"] = protocol
+    res["config"] = config_name
+    res["is_jpeg"] = is_jpeg
+    
+    # 保存结果
+    record_result(res, config_name)
     
 
 

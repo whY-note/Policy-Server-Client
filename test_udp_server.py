@@ -4,18 +4,21 @@ import time
 import h5py
 import os
 
-def run_udp(host="0.0.0.0", port=9000, packaging_type="json"):
-    file_dir = os.path.join(BASE_DIR, "data")
-    file_name = "episode0.hdf5"
-    file_path = os.path.join(file_dir, file_name)
-    print(f"file path: {file_path}")
+def run_udp(host, port, packaging_type, test_file_path):
 
     server = UDPServer(host, port, packaging_type)
 
-    server._recv_msg() # 等待客户端注册
+    user_name_dict = server._recv_msg() # 等待客户端注册
+
+    if user_name_dict.get("type") == "user_name":
+        user_name = user_name_dict.get("user_name", "unknown_user")
+    else:
+        print("Did not receive username, using default 'unknown_user'")
+        user_name = "unknown_user"
+    print(f"User: {user_name}")
 
     try:
-        with h5py.File(file_path, "r") as f:
+        with h5py.File(test_file_path, "r") as f:
             # load data from hdf5 file
             rgb_dataset_head_camera = f["observation/head_camera/rgb"]
             rgb_dataset_left_camera = f["observation/left_camera/rgb"] 
@@ -126,10 +129,16 @@ if __name__ == "__main__":
     PACKAGING_TYPE = "pickle"  # json / msgpack / pickle
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    file_dir = os.path.join(BASE_DIR, "data")
+    file_name = "episode0.hdf5"
+    file_path = os.path.join(file_dir, file_name)
+    print(f"file path: {file_path}")
+
     run_udp(
         host="0.0.0.0",
         port=9000,
-        packaging_type=PACKAGING_TYPE 
+        packaging_type=PACKAGING_TYPE,
+        test_file_path=file_path
     )
     # run_udp_with_simple_msg(
     #     host="0.0.0.0",

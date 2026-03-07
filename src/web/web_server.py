@@ -19,6 +19,7 @@ class WebServer(BaseServer):
 
         self._ws = None
         self._action_queue = asyncio.Queue()
+        self._msg_queue = asyncio.Queue()
         self._connected_event = asyncio.Event()
 
         self.packaging_type = packaging_type
@@ -44,13 +45,16 @@ class WebServer(BaseServer):
                         data = pickle.loads(message) # pickle
                     else:
                         raise ValueError("Unsupported packaging type")
-
+                    
                     if data.get("type") == "action":
                         if self.packaging_type == "json":
                             action = json_to_numpy(data["action"]) # json
                         elif self.packaging_type == "pickle" or self.packaging_type == "msgpack":
                             action = data["action"]  # msgpack, pickle
                         await self._action_queue.put(action)
+                    else:
+                        await self._msg_queue.put(data)
+
 
             except Exception as e:
                 print("Client disconnected:", e)
@@ -68,6 +72,11 @@ class WebServer(BaseServer):
         async with serve(handler, self.host, self.port, max_size = None):
             await asyncio.Future()  # Run forever
 
+    async def _recv_msg(self):
+        # 从队列中获取消息
+        data = await self._msg_queue.get()
+        return data
+    
     # -------------------------------------------------
     # 发送 observation
     # -------------------------------------------------
@@ -84,7 +93,9 @@ class WebServer(BaseServer):
                 "type": "obs",
                 "obs": obs  # msgpack, pickle
             }
+        await self._send_msg(payload)
 
+    async def _send_msg(self, payload):
         try:
             if self.packaging_type == "json":
                 await self._ws.send(json.dumps(payload)) # json

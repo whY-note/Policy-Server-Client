@@ -76,6 +76,7 @@ class TCPClient(BaseClient):
         self.collector.collect(obs)
         action = self.infer(obs)
         self.post_action(action)
+        return False
         
     def close(self):
         self.client_socket.close()
