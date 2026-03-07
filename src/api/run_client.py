@@ -47,7 +47,9 @@ def run_client(protocol, host, port, packaging_type):
         client._send_msg({"type": "user_name", "user_name": user_name})
     
         while True:
+            print("before step")
             finished = client.step()
+            print("after step")
             if finished:
                 break
     except KeyboardInterrupt:

@@ -14,6 +14,37 @@ sequenceDiagram
 
 ## How to use?
 
+### 运行已有测试
+For **server**:
+
+在终端运行：
+```bash
+bash test_server.sh test_num
+```
+
+`test_num`代表测试序号,可选1~15
+
+例如：
+```bash
+bash test_server.sh 1
+```
+
+For **client**:
+
+在终端运行：
+```bash
+bash test_client.sh test_num
+```
+
+`test_num`代表测试序号,可选1~15
+
+例如：
+```bash
+bash test_client.sh 1
+```
+
+### 自定义测试
+
 For **server**:
 
 1. 在`./config/config.yml`中的`client`下的`host`写入服务器的IP地址(若使用了隧道，则写`localhost`即可)；然后指定本次测试的**协议 (`protocol`)**, **序列化方法(`packaging_type`)**
@@ -77,7 +108,7 @@ ssh -p 6361 -L 9000:localhost:9000 root@120.48.23.252
 - [x] UDP**人为分片**！
 - [x] 整理好result的结构
 - [x] UDP加入整体架构中
-- [ ] UDP测试
+- [x] UDP测试
 - [ ] 尝试将TCP也变成异步, 用`async`
 
 ## 知识
